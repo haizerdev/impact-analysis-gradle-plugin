@@ -42,6 +42,9 @@ abstract class CalculateImpactTask : DefaultTask() {
         outputFile.convention(
             project.layout.buildDirectory.file("impact-analysis/result.json")
         )
+
+        // Отключаем up-to-date проверку, т.к. таска зависит от Git состояния
+        outputs.upToDateWhen { false }
     }
 
     @TaskAction

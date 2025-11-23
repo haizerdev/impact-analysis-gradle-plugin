@@ -39,6 +39,9 @@ abstract class GetChangedFilesTask : DefaultTask() {
         outputFile.convention(
             project.layout.buildDirectory.file("impact-analysis/changed-files.txt")
         )
+
+        // Отключаем up-to-date проверку, т.к. таска зависит от Git состояния
+        outputs.upToDateWhen { false }
     }
 
     @TaskAction

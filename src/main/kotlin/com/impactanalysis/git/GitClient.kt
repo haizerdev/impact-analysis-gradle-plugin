@@ -91,6 +91,39 @@ class GitClient(private val projectDir: File) {
         return repository.branch ?: "unknown"
     }
 
+    /**
+     * Получить SHA HEAD коммита
+     */
+    fun getHeadCommitHash(): String {
+        return try {
+            val head = repository.resolve("HEAD")
+            head?.name ?: "unknown"
+        } catch (e: Exception) {
+            "unknown"
+        }
+    }
+
+    /**
+     * Получить хеш uncommitted изменений для Gradle input
+     * Возвращает строку содержащую пути и timestamp всех измененных файлов
+     */
+    fun getUncommittedChangesHash(): String {
+        val changes = getUncommittedChanges()
+        if (changes.isEmpty()) {
+            return "no-changes"
+        }
+
+        // Создаем строку из путей и их timestamp для хеширования
+        val changesString = changes
+            .sortedBy { it.newPath }
+            .joinToString("|") { entry ->
+                val file = File(projectDir, entry.newPath)
+                "${entry.newPath}:${entry.changeType}:${file.lastModified()}"
+            }
+
+        return changesString.hashCode().toString()
+    }
+
     private fun resolveCommit(ref: String): RevCommit {
         val objectId: ObjectId = repository.resolve(ref)
         return RevWalk(repository).parseCommit(objectId)
