@@ -35,3 +35,4 @@ changed-services.txt
 .test/
 **/test-tmp/
 junit*.properties
+/.idea/
