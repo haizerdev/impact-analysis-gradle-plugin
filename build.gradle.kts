@@ -3,9 +3,10 @@ plugins {
     `java-gradle-plugin`
     `maven-publish`
     jacoco
+    id("com.gradle.plugin-publish") version "1.2.1"
 }
 
-group = "com.nzr.impactanalysis"
+group = "com.nzr.impact-analysis"
 version = "1.0.1"
 
 repositories {
@@ -29,12 +30,17 @@ dependencies {
 }
 
 gradlePlugin {
+    website.set("https://github.com/haizerdev/impact-analysis-gradle-plugin")
+    vcsUrl.set("https://github.com/haizerdev/impact-analysis-gradle-plugin.git")
+
     plugins {
         create("impactAnalysisPlugin") {
-            id = "com.nzr.impactanalysis.plugin"
-            implementationClass = "com.nzr.impactanalysis.ImpactAnalysisPlugin"
+            id = "com.nzr.impact-analysis"
+            implementationClass = "com.nzr.impact_analysis.ImpactAnalysisPlugin"
             displayName = "Impact Analysis Plugin"
-            description = "Analyzes Git changes to determine test scope and changed files for multi-module projects"
+            description =
+                "Gradle plugin for automatic Git changes analysis and test scope determination in multi-module projects"
+            tags.set(listOf("git", "testing", "ci-cd", "analysis", "multi-module", "impact-analysis"))
         }
     }
 }

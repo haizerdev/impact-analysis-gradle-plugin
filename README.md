@@ -3,6 +3,8 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Gradle Plugin](https://img.shields.io/badge/Gradle-Plugin-green.svg)](https://gradle.org/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-1.9.22-purple.svg)](https://kotlinlang.org/)
+[![Test](https://github.com/haizerdev/impact-analysis-gradle-plugin/actions/workflows/test.yml/badge.svg)](https://github.com/haizerdev/impact-analysis-gradle-plugin/actions/workflows/test.yml)
+[![Publish](https://github.com/haizerdev/impact-analysis-gradle-plugin/actions/workflows/publish.yml/badge.svg)](https://github.com/haizerdev/impact-analysis-gradle-plugin/actions/workflows/publish.yml)
 
 Gradle plugin for automatic Git changes analysis and test scope determination in multi-module projects.
 
@@ -54,7 +56,35 @@ impactAnalysis {
         runOnlyInChangedModules = true
     }
 }
+
+## Automated Publishing
+
+This plugin is automatically published to **Gradle Plugin Portal** using GitHub Actions.
+
+### For Plugin Developers
+
+When you create a new release tag (e.g., `v1.0.2`), GitHub Actions automatically:
+
+1. Runs all tests
+2. Builds the plugin
+3. Publishes to Gradle Plugin Portal
+4. Creates a GitHub Release with JAR files
+
+**How to publish a new version:**
+
+```bash
+# Update version in build.gradle.kts
+# version = "1.0.2"
+
+git add build.gradle.kts
+git commit -m "chore: bump version to 1.0.2"
+git push origin main
+
+git tag -a v1.0.2 -m "Release v1.0.2"
+git push origin v1.0.2
 ```
+
+See [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md) for detailed setup instructions.
 
 ## Usage
 
