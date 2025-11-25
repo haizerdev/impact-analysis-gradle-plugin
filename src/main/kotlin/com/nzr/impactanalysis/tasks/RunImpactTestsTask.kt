@@ -74,50 +74,50 @@ abstract class RunImpactTestsTask : DefaultTask() {
             logger.lifecycle("\n${testType.name} Tests (${tasks.size} tasks):")
             logger.lifecycle("-".repeat(60))
 
+            if (tasks.isEmpty()) {
+                return@forEach
+            }
+
+            totalTasks += tasks.size
+
+            // Выводим список задач, которые будут запущены
             tasks.forEach { taskPath ->
-                totalTasks++
-                logger.lifecycle("Running: $taskPath")
+                logger.lifecycle("  - $taskPath")
+            }
 
-                try {
-                    // Запускаем задачу через Gradle
-                    val taskResult = project.gradle.includedBuilds.firstOrNull()?.task(taskPath)
-                        ?: project.rootProject.tasks.findByPath(taskPath)
+            try {
+                // Запускаем все задачи одной командой
+                val gradleCommand = if (System.getProperty("os.name").lowercase().contains("win")) {
+                    listOf("cmd", "/c", "gradlew.bat") + tasks + listOf("--console=plain")
+                } else {
+                    listOf("./gradlew") + tasks + listOf("--console=plain")
+                }
 
-                    if (taskResult != null) {
-                        // Задача найдена в текущем проекте
-                        successfulTasks++
-                        logger.lifecycle("✓ $taskPath completed successfully")
-                    } else {
-                        // Пробуем запустить через exec
-                        val execResult = project.exec { spec ->
-                            spec.workingDir = project.rootProject.projectDir
-                            if (System.getProperty("os.name").lowercase().contains("win")) {
-                                spec.commandLine("cmd", "/c", "gradlew.bat", taskPath)
-                            } else {
-                                spec.commandLine("./gradlew", taskPath)
-                            }
-                            spec.isIgnoreExitValue = continueOnFailure.get()
-                        }
+                logger.lifecycle("\nExecuting: ${tasks.joinToString(" ")}")
 
-                        if (execResult.exitValue == 0) {
-                            successfulTasks++
-                            logger.lifecycle("✓ $taskPath completed successfully")
-                        } else {
-                            failedTasks.add(taskPath)
-                            logger.error("✗ $taskPath failed")
+                val execResult = project.exec { spec ->
+                    spec.workingDir = project.rootProject.projectDir
+                    spec.commandLine = gradleCommand
+                    spec.isIgnoreExitValue = continueOnFailure.get()
+                }
 
-                            if (!continueOnFailure.get()) {
-                                throw RuntimeException("Test task $taskPath failed")
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    failedTasks.add(taskPath)
-                    logger.error("✗ $taskPath failed: ${e.message}")
+                if (execResult.exitValue == 0) {
+                    successfulTasks += tasks.size
+                    logger.lifecycle("✓ All ${testType.name} tests completed successfully")
+                } else {
+                    failedTasks.addAll(tasks)
+                    logger.error("✗ ${testType.name} tests failed with exit code: ${execResult.exitValue}")
 
                     if (!continueOnFailure.get()) {
-                        throw e
+                        throw RuntimeException("${testType.name} tests failed with exit code: ${execResult.exitValue}")
                     }
+                }
+            } catch (e: Exception) {
+                failedTasks.addAll(tasks)
+                logger.error("✗ ${testType.name} tests failed: ${e.message}")
+
+                if (!continueOnFailure.get()) {
+                    throw e
                 }
             }
         }
