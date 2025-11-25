@@ -415,7 +415,7 @@ This project is licensed under the Apache License 2.0. See [LICENSE](LICENSE) fi
 
 **NZR**
 
-- GitHub: [@nzr](https://github.com/nzr)
+- GitHub: [@nzr](https://github.com/haizerdev)
 
 ## Support
 
