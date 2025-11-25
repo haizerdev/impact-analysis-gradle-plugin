@@ -5,7 +5,7 @@ plugins {
     jacoco
 }
 
-group = "com.impactanalysis"
+group = "com.nzr.impactanalysis"
 version = "1.0.1"
 
 repositories {
@@ -31,8 +31,8 @@ dependencies {
 gradlePlugin {
     plugins {
         create("impactAnalysisPlugin") {
-            id = "com.impactanalysis.plugin"
-            implementationClass = "com.impactanalysis.ImpactAnalysisPlugin"
+            id = "com.nzr.impactanalysis.plugin"
+            implementationClass = "com.nzr.impactanalysis.ImpactAnalysisPlugin"
             displayName = "Impact Analysis Plugin"
             description = "Analyzes Git changes to determine test scope and changed files for multi-module projects"
         }
