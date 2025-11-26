@@ -41,6 +41,15 @@ jobs:
       - name: Build plugin
         run: ./gradlew build
 
+      - name: Check Release Token
+        run: |
+          if [ -n "${{ secrets.RELEASE_TOKEN }}" ]; then
+            echo "Using RELEASE_TOKEN for GitHub release"
+          else
+            echo "Using GITHUB_TOKEN for GitHub release (fallback)"
+            echo "⚠️ For better reliability, consider creating RELEASE_TOKEN"
+          fi
+
       # Publish to Gradle Plugin Portal (requires secrets to be configured)
       # To enable: Add GRADLE_PUBLISH_KEY and GRADLE_PUBLISH_SECRET to GitHub Secrets
       # See: https://plugins.gradle.org/u/me for API keys
@@ -60,4 +69,4 @@ jobs:
           prerelease: false
           fail_on_unmatched_files: false
           name: Release ${{ github.ref_name }}
-          token: ${{ secrets.RELEASE_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
