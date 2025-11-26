@@ -388,10 +388,7 @@ The plugin is covered with unit and integration tests:
 ## Documentation
 
 - [Architecture](ARCHITECTURE.md) - detailed architecture description
-- [Quick Start](FIRST_RUN.md) - step-by-step guide
-- [Test Guide](TEST_GUIDE.md) - writing and running tests
 - [Implementation Plan](IMPLEMENTATION_PLAN.md) - how to implement in your project
-- [Cache Fix](CACHE_FIX.md) - solution to caching problem
 
 ## Contributing
 
