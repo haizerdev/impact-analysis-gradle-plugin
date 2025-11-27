@@ -3,6 +3,7 @@ package com.haizerdev.impactanalysis
 import com.haizerdev.impactanalysis.extension.ImpactAnalysisExtension
 import com.haizerdev.impactanalysis.tasks.CalculateImpactTask
 import com.haizerdev.impactanalysis.tasks.GetChangedFilesTask
+import com.haizerdev.impactanalysis.tasks.RunImpactKotlinCompileTask
 import com.haizerdev.impactanalysis.tasks.RunImpactTestsTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -68,6 +69,15 @@ class ImpactAnalysisPlugin : Plugin<Project> {
         // Task for running tests based on impact analysis
         project.tasks.register("runImpactTests", RunImpactTestsTask::class.java) { task ->
             task.description = "Run tests based on impact analysis results"
+            task.group = "impact analysis"
+
+            // Depends on calculateImpact
+            task.dependsOn("calculateImpact")
+        }
+
+        // Task for running Kotlin compilation based on impact analysis
+        project.tasks.register("runImpactKotlinCompile", RunImpactKotlinCompileTask::class.java) { task ->
+            task.description = "Run Kotlin compilation for affected modules"
             task.group = "impact analysis"
 
             // Depends on calculateImpact
