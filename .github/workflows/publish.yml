@@ -53,20 +53,20 @@ jobs:
       # Publish to Gradle Plugin Portal (requires secrets to be configured)
       # To enable: Add GRADLE_PUBLISH_KEY and GRADLE_PUBLISH_SECRET to GitHub Secrets
       # See: https://plugins.gradle.org/u/me for API keys
-      - name: Publish to Gradle Plugin Portal
-        if: true
+      - name: Publish to GitHub Packages Maven
         env:
-          GRADLE_PUBLISH_KEY: ${{ secrets.GRADLE_PUBLISH_KEY }}
-          GRADLE_PUBLISH_SECRET: ${{ secrets.GRADLE_PUBLISH_SECRET }}
-        run: ./gradlew publishPlugins -Pgradle.publish.key=$GRADLE_PUBLISH_KEY -Pgradle.publish.secret=$GRADLE_PUBLISH_SECRET
+          USERNAME: ${{ github.actor }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew publish
 
-      - name: Create GitHub Release
+      - name: Upload Plugin Jar to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: build/libs/*.jar
           generate_release_notes: true
           draft: false
           prerelease: false
-          fail_on_unmatched_files: false
           name: Release ${{ github.ref_name }}
-          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}

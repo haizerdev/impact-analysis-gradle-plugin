@@ -103,3 +103,25 @@ tasks.register("testWithReport") {
         println("📈 Coverage report: ${buildDir}/reports/jacoco/test/html/index.html")
     }
 }
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/haizerdev/impact-analysis-gradle-plugin")
+            credentials {
+                username = project.findProperty("gpr.user") as String? ?: System.getenv("USERNAME") ?: "x-access-token"
+                password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
+                        ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+    publications {
+        create<MavenPublication>("gpr") {
+            from(components["java"])
+            groupId = "com.haizerdev.impactanalysis"
+            artifactId = "impact-analysis-plugin"
+            version = project.version.toString()
+        }
+    }
+}
