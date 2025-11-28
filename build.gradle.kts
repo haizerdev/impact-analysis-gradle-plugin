@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.haizerdev.impactanalysis"
-version = "1.0.16"
+version = "1.0.17"
 
 repositories {
     mavenCentral()
@@ -114,14 +114,6 @@ publishing {
                 password = project.findProperty("gpr.key") as String? ?: System.getenv("TOKEN")
                         ?: System.getenv("GITHUB_TOKEN")
             }
-        }
-    }
-    publications {
-        create<MavenPublication>("gpr") {
-            from(components["java"])
-            groupId = "com.haizerdev.impactanalysis"
-            artifactId = "impact-analysis-plugin"
-            version = project.version.toString()
         }
     }
 }
