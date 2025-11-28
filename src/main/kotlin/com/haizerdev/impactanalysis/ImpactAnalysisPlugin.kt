@@ -40,6 +40,43 @@ class ImpactAnalysisPlugin : Plugin<Project> {
             task.baseBranch.convention(extension.baseBranch)
             task.compareBranch.convention(extension.compareBranch)
             task.includeUncommittedChanges.convention(extension.includeUncommittedChanges)
+            task.rootProjectDir.convention(project.layout.projectDirectory)
+            task.lintFileExtensions.convention(extension.lintFileExtensions)
+            task.runAllTestsOnCriticalChanges.convention(extension.runAllTestsOnCriticalChanges)
+            task.runUnitTestsByDefault.convention(extension.runUnitTestsByDefault)
+            task.criticalPaths.convention(extension.criticalPaths)
+
+            // Serialize module dependency data during configuration
+            task.moduleDependencies.convention(project.provider {
+                serializeModuleDependencies(project.rootProject)
+            })
+
+            task.moduleReverseDependencies.convention(project.provider {
+                serializeModuleReverseDependencies(project.rootProject)
+            })
+
+            task.allModules.convention(project.provider {
+                project.rootProject.allprojects.map { it.path }.toList()
+            })
+
+            task.moduleDirectories.convention(project.provider {
+                serializeModuleDirectories(project.rootProject)
+            })
+
+            task.availableTestTasks.convention(project.provider {
+                serializeAvailableTestTasks(project.rootProject)
+            })
+
+            // Convert test type rules to serializable format
+            task.testTypeRulesData.convention(project.provider {
+                extension.testTypeRulesMap.mapKeys { it.key.name }
+                    .mapValues { (_, rule) ->
+                        com.haizerdev.impactanalysis.tasks.SerializableTestTypeRule(
+                            pathPatterns = rule.pathPatterns.toList(),
+                            runOnlyInChangedModules = rule.runOnlyInChangedModules
+                        )
+                    }
+            })
         }
 
         // Task for getting changed files
@@ -50,6 +87,7 @@ class ImpactAnalysisPlugin : Plugin<Project> {
             task.baseBranch.convention(extension.baseBranch)
             task.compareBranch.convention(extension.compareBranch)
             task.includeUncommittedChanges.convention(extension.includeUncommittedChanges)
+            task.rootProjectDir.convention(project.layout.projectDirectory)
         }
 
         // Task for getting changed files for linting
@@ -60,6 +98,7 @@ class ImpactAnalysisPlugin : Plugin<Project> {
             task.baseBranch.convention(extension.baseBranch)
             task.compareBranch.convention(extension.compareBranch)
             task.includeUncommittedChanges.convention(extension.includeUncommittedChanges)
+            task.rootProjectDir.convention(project.layout.projectDirectory)
             task.fileExtensions.convention(extension.lintFileExtensions)
             task.outputFile.convention(
                 project.layout.buildDirectory.file("impact-analysis/lint-files.txt")
@@ -71,6 +110,8 @@ class ImpactAnalysisPlugin : Plugin<Project> {
             task.description = "Run tests based on impact analysis results"
             task.group = "impact analysis"
 
+            task.rootProjectDir.convention(project.layout.projectDirectory)
+
             // Depends on calculateImpact
             task.dependsOn("calculateImpact")
         }
@@ -79,6 +120,8 @@ class ImpactAnalysisPlugin : Plugin<Project> {
         project.tasks.register("runImpactKotlinCompile", RunImpactKotlinCompileTask::class.java) { task ->
             task.description = "Run Kotlin compilation for affected modules"
             task.group = "impact analysis"
+
+            task.rootProjectDir.convention(project.layout.projectDirectory)
 
             // Depends on calculateImpact
             task.dependsOn("calculateImpact")
@@ -90,6 +133,88 @@ class ImpactAnalysisPlugin : Plugin<Project> {
             task.group = "impact analysis"
 
             task.dependsOn("runImpactTests")
+        }
+    }
+
+    private fun serializeModuleDependencies(rootProject: Project): Map<String, List<String>> {
+        val dependencyMap = mutableMapOf<String, MutableList<String>>()
+
+        rootProject.allprojects.forEach { project ->
+            val modulePath = project.path
+            dependencyMap.putIfAbsent(modulePath, mutableListOf())
+
+            // Analyze all configurations
+            project.configurations.forEach { config ->
+                try {
+                    config.dependencies
+                        .filterIsInstance<org.gradle.api.artifacts.ProjectDependency>()
+                        .forEach { dependency ->
+                            val dependencyPath = dependency.dependencyProject.path
+                            dependencyMap.getOrPut(modulePath) { mutableListOf() }
+                                .add(dependencyPath)
+                        }
+                } catch (e: Exception) {
+                    // Some configurations may not be resolvable, ignore
+                }
+            }
+        }
+
+        return dependencyMap.mapValues { it.value.distinct() }
+    }
+
+    private fun serializeModuleReverseDependencies(rootProject: Project): Map<String, List<String>> {
+        val reverseDependencyMap = mutableMapOf<String, MutableList<String>>()
+
+        rootProject.allprojects.forEach { project ->
+            val modulePath = project.path
+
+            // Analyze all configurations
+            project.configurations.forEach { config ->
+                try {
+                    config.dependencies
+                        .filterIsInstance<org.gradle.api.artifacts.ProjectDependency>()
+                        .forEach { dependency ->
+                            val dependencyPath = dependency.dependencyProject.path
+                            // Reverse dependency: dependencyPath <- modulePath
+                            reverseDependencyMap.getOrPut(dependencyPath) { mutableListOf() }
+                                .add(modulePath)
+                        }
+                } catch (e: Exception) {
+                    // Some configurations may not be resolvable, ignore
+                }
+            }
+        }
+
+        return reverseDependencyMap.mapValues { it.value.distinct() }
+    }
+
+    private fun serializeModuleDirectories(rootProject: Project): Map<String, String> {
+        return rootProject.allprojects.associate { project ->
+            val relativePath = project.projectDir.relativeTo(rootProject.projectDir).path
+            project.path to if (relativePath.isEmpty() || relativePath == ".") "" else relativePath
+        }
+    }
+
+    private fun serializeAvailableTestTasks(rootProject: Project): Map<String, List<String>> {
+        return rootProject.allprojects.associate { project ->
+            // Get test task names that might be available
+            // We check for task names, not task objects, to avoid configuration issues
+            val testTaskNames = mutableListOf<String>()
+
+            // Common test task names
+            val commonTestTasks = listOf("test", "integrationTest", "uiTest", "e2eTest", "apiTest")
+
+            commonTestTasks.forEach { taskName ->
+                try {
+                    if (project.tasks.findByName(taskName) != null) {
+                        testTaskNames.add(taskName)
+                    }
+                } catch (e: Exception) {
+                    // Task might not be configured yet
+                }
+            }
+
+            project.path to testTaskNames
         }
     }
 }

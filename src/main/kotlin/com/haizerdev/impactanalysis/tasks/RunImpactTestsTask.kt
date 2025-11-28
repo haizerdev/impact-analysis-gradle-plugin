@@ -3,14 +3,20 @@ package com.haizerdev.impactanalysis.tasks
 import com.google.gson.Gson
 import com.haizerdev.impactanalysis.model.ImpactAnalysisResult
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
+import org.gradle.process.ExecOperations
+import javax.inject.Inject
 
 /**
  * Task for running tests based on impact analysis results
+ * Configuration cache compatible - uses ExecOperations instead of project.exec
  */
-abstract class RunImpactTestsTask : DefaultTask() {
+abstract class RunImpactTestsTask @Inject constructor(
+    private val execOperations: ExecOperations
+) : DefaultTask() {
 
     @get:InputFile
     abstract val impactResultFile: RegularFileProperty
@@ -22,6 +28,11 @@ abstract class RunImpactTestsTask : DefaultTask() {
     @get:Input
     abstract val continueOnFailure: Property<Boolean>
 
+    @get:Internal
+    abstract val rootProjectDir: DirectoryProperty
+
+    private val isWindows: Boolean = System.getProperty("os.name").lowercase().contains("win")
+
     init {
         group = "impact analysis"
         description = "Run tests based on impact analysis results"
@@ -31,6 +42,8 @@ abstract class RunImpactTestsTask : DefaultTask() {
         )
 
         continueOnFailure.convention(false)
+
+        rootProjectDir.convention(project.layout.projectDirectory)
     }
 
     @TaskAction
@@ -79,36 +92,26 @@ abstract class RunImpactTestsTask : DefaultTask() {
                 logger.lifecycle("Running: $taskPath")
 
                 try {
-                    // Run task through Gradle
-                    val taskResult = project.gradle.includedBuilds.firstOrNull()?.task(taskPath)
-                        ?: project.rootProject.tasks.findByPath(taskPath)
+                    // Run task through exec
+                    val execResult = execOperations.exec { spec ->
+                        spec.workingDir = rootProjectDir.get().asFile
+                        if (isWindows) {
+                            spec.commandLine("cmd", "/c", "gradlew.bat", taskPath, "--no-daemon")
+                        } else {
+                            spec.commandLine("./gradlew", taskPath, "--no-daemon")
+                        }
+                        spec.isIgnoreExitValue = continueOnFailure.get()
+                    }
 
-                    if (taskResult != null) {
-                        // Task found in current project
+                    if (execResult.exitValue == 0) {
                         successfulTasks++
                         logger.lifecycle("✓ $taskPath completed successfully")
                     } else {
-                        // Try running through exec
-                        val execResult = project.exec { spec ->
-                            spec.workingDir = project.rootProject.projectDir
-                            if (System.getProperty("os.name").lowercase().contains("win")) {
-                                spec.commandLine("cmd", "/c", "gradlew.bat", taskPath)
-                            } else {
-                                spec.commandLine("./gradlew", taskPath)
-                            }
-                            spec.isIgnoreExitValue = continueOnFailure.get()
-                        }
+                        failedTasks.add(taskPath)
+                        logger.error("✗ $taskPath failed")
 
-                        if (execResult.exitValue == 0) {
-                            successfulTasks++
-                            logger.lifecycle("✓ $taskPath completed successfully")
-                        } else {
-                            failedTasks.add(taskPath)
-                            logger.error("✗ $taskPath failed")
-
-                            if (!continueOnFailure.get()) {
-                                throw RuntimeException("Test task $taskPath failed")
-                            }
+                        if (!continueOnFailure.get()) {
+                            throw RuntimeException("Test task $taskPath failed")
                         }
                     }
                 } catch (e: Exception) {

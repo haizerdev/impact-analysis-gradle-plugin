@@ -1,9 +1,9 @@
 package com.haizerdev.impactanalysis.tasks
 
-import com.haizerdev.impactanalysis.extension.ImpactAnalysisExtension
 import com.haizerdev.impactanalysis.git.GitClient
 import com.haizerdev.impactanalysis.git.GitDiffEntry
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
@@ -11,6 +11,7 @@ import org.gradle.api.tasks.*
 
 /**
  * Task for getting list of changed files
+ * Configuration cache compatible
  */
 abstract class GetChangedFilesTask : DefaultTask() {
 
@@ -29,6 +30,9 @@ abstract class GetChangedFilesTask : DefaultTask() {
     @get:Optional
     abstract val fileExtensions: ListProperty<String>
 
+    @get:Internal
+    abstract val rootProjectDir: DirectoryProperty
+
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
 
@@ -46,8 +50,8 @@ abstract class GetChangedFilesTask : DefaultTask() {
 
     @TaskAction
     fun execute() {
-        val extension = project.extensions.getByType(ImpactAnalysisExtension::class.java)
-        val gitClient = GitClient(project.rootProject.projectDir)
+        val rootDir = rootProjectDir.get().asFile
+        val gitClient = GitClient(rootDir)
 
         try {
             // Get changes
@@ -57,8 +61,8 @@ abstract class GetChangedFilesTask : DefaultTask() {
                 changes.addAll(gitClient.getUncommittedChanges())
             }
 
-            val base = baseBranch.orNull ?: extension.baseBranch.get()
-            val compare = compareBranch.orNull ?: extension.compareBranch.get()
+            val base = baseBranch.get()
+            val compare = compareBranch.get()
 
             try {
                 changes.addAll(gitClient.getChangedFiles(base, compare))

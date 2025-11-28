@@ -10,13 +10,14 @@ Gradle plugin for automatic Git changes analysis and test scope determination in
 
 ## Features
 
-- Git changes analysis - automatic detection of modified files
-- Dependency graph - build dependencies between modules
-- Smart test scope determination - unit, integration, UI, E2E, API and more
-- Multi-module support - works with any project structure
-- Flexible configuration - DSL for rule customization
-- Uncommitted changes support - analyze local changes
-- CI/CD time savings - run only necessary tests (60-90% savings)
+- **Git changes analysis** - automatic detection of modified files
+- **Dependency graph** - build dependencies between modules
+- **Smart test scope determination** - unit, integration, UI, E2E, API and more
+- **Multi-module support** - works with any project structure
+- **Flexible configuration** - DSL for rule customization
+- **Uncommitted changes support** - analyze local changes
+- **Configuration cache support** ⚡ - full support for Gradle configuration cache for faster builds
+- **CI/CD time savings** - run only necessary tests (60-90% savings)
 
 ## Installation
 
@@ -24,7 +25,7 @@ Gradle plugin for automatic Git changes analysis and test scope determination in
 
 ```kotlin
 plugins {
-    id("com.haizerdev.impactanalysis") version "1.0.4"
+    id("com.haizerdev.impactanalysis") version "1.0.12"
 }
 ```
 
@@ -63,7 +64,7 @@ This plugin is automatically published to **Gradle Plugin Portal** using GitHub 
 
 ### For Plugin Developers
 
-When you create a new release tag (e.g., `v1.0.2`), GitHub Actions automatically:
+When you create a new release tag (e.g., `v1.0.12`), GitHub Actions automatically:
 
 1. Runs all tests
 2. Builds the plugin
@@ -74,17 +75,15 @@ When you create a new release tag (e.g., `v1.0.2`), GitHub Actions automatically
 
 ```bash
 # Update version in build.gradle.kts
-# version = "1.0.2"
+# version = "1.0.12"
 
 git add build.gradle.kts
-git commit -m "chore: bump version to 1.0.2"
+git commit -m "chore: bump version to 1.0.12"
 git push origin main
 
-git tag -a v1.0.2 -m "Release v1.0.2"
-git push origin v1.0.2
+git tag -a v1.0.12 -m "Release v1.0.12"
+git push origin v1.0.12
 ```
-
-See [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md) for detailed setup instructions.
 
 ## Usage
 

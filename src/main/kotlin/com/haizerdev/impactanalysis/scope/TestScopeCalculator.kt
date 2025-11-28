@@ -3,9 +3,21 @@ package com.haizerdev.impactanalysis.scope
 import com.haizerdev.impactanalysis.dependency.DependencyAnalyzer
 import com.haizerdev.impactanalysis.dependency.ModuleDependencyGraph
 import com.haizerdev.impactanalysis.extension.ImpactAnalysisExtension
+import com.haizerdev.impactanalysis.extension.TestTypeRule
 import com.haizerdev.impactanalysis.model.ChangedFile
 import com.haizerdev.impactanalysis.model.TestType
 import org.gradle.api.Project
+
+/**
+ * Interface for extension configuration access
+ */
+interface ImpactAnalysisConfig {
+    val criticalPaths: List<String>
+    val runAllTestsOnCriticalChanges: Boolean
+    val runUnitTestsByDefault: Boolean
+    val testTypeRules: Map<TestType, TestTypeRule>
+    val lintFileExtensions: List<String>
+}
 
 /**
  * Test scope calculator based on changes
@@ -14,7 +26,7 @@ class TestScopeCalculator(
     private val rootProject: Project,
     private val dependencyGraph: ModuleDependencyGraph,
     private val dependencyAnalyzer: DependencyAnalyzer,
-    private val extension: ImpactAnalysisExtension
+    private val config: ImpactAnalysisConfig
 ) {
 
     /**
@@ -28,19 +40,19 @@ class TestScopeCalculator(
         val allAffectedModules = dependencyGraph.getAffectedModules(directlyAffectedModules)
 
         // Check critical files
-        val criticalPaths = extension.criticalPaths.get()
+        val criticalPaths = config.criticalPaths
         val hasCriticalChanges = changedFiles.any { file ->
             dependencyAnalyzer.isConfigFile(file.path) ||
                     criticalPaths.any { file.path.contains(it) }
         }
 
-        if (hasCriticalChanges && extension.runAllTestsOnCriticalChanges) {
+        if (hasCriticalChanges && config.runAllTestsOnCriticalChanges) {
             // Run all tests in all modules
             return getAllTestsForModules(allAffectedModules)
         }
 
         // Determine test types for each affected module
-        extension.testTypeRules.forEach { (testType, rule) ->
+        config.testTypeRules.forEach { (testType, rule) ->
             val modulesToTest = when {
                 // If changed files match the rule
                 changedFiles.any { file -> rule.shouldRunForFile(file.path) } -> {
@@ -60,7 +72,7 @@ class TestScopeCalculator(
         }
 
         // If no specific rules, run unit tests
-        if (result.isEmpty() && extension.runUnitTestsByDefault) {
+        if (result.isEmpty() && config.runUnitTestsByDefault) {
             result[TestType.UNIT] = generateTestTasks(allAffectedModules, TestType.UNIT)
         }
 

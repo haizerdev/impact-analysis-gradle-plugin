@@ -72,7 +72,7 @@ class TestScopeCalculatorTest {
             rootProject,
             dependencyGraph,
             dependencyAnalyzer,
-            extension
+            extension.getConfig()
         )
     }
 
@@ -115,7 +115,7 @@ class TestScopeCalculatorTest {
 
     @Test
     fun `test calculateTestScope with config changes runs all tests when enabled`() {
-        extension.runAllTestsOnCriticalChangesProperty.set(true)
+        extension.runAllTestsOnCriticalChanges.set(true)
         extension.criticalPaths.set(listOf("build.gradle"))
 
         val changedFiles = listOf(
@@ -136,7 +136,7 @@ class TestScopeCalculatorTest {
     @Test
     fun `test calculateTestScope returns empty when no rules match`() {
         // Disable default unit tests
-        extension.runUnitTestsByDefaultProperty.set(false)
+        extension.runUnitTestsByDefault.set(false)
 
         val changedFiles = listOf(
             ChangedFile(

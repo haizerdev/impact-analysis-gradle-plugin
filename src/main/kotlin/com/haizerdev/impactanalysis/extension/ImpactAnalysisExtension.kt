@@ -1,6 +1,7 @@
 package com.haizerdev.impactanalysis.extension
 
 import com.haizerdev.impactanalysis.model.TestType
+import com.haizerdev.impactanalysis.scope.ImpactAnalysisConfig
 import org.gradle.api.Action
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.provider.ListProperty
@@ -36,14 +37,14 @@ abstract class ImpactAnalysisExtension @Inject constructor(objects: ObjectFactor
     /**
      * Run all tests when critical files are changed
      */
-    val runAllTestsOnCriticalChangesProperty: Property<Boolean> = objects.property(Boolean::class.java).apply {
+    val runAllTestsOnCriticalChanges: Property<Boolean> = objects.property(Boolean::class.java).apply {
         convention(true)
     }
 
     /**
      * Run unit tests by default if no other rules match
      */
-    val runUnitTestsByDefaultProperty: Property<Boolean> = objects.property(Boolean::class.java).apply {
+    val runUnitTestsByDefault: Property<Boolean> = objects.property(Boolean::class.java).apply {
         convention(true)
     }
 
@@ -72,13 +73,13 @@ abstract class ImpactAnalysisExtension @Inject constructor(objects: ObjectFactor
     /**
      * Rules for determining test types
      */
-    internal val testTypeRules = mutableMapOf<TestType, TestTypeRule>()
+    internal val testTypeRulesMap = mutableMapOf<TestType, TestTypeRule>()
 
     /**
      * Configure rules for test type
      */
     fun testType(type: TestType, action: Action<TestTypeRule>) {
-        val rule = testTypeRules.getOrPut(type) { TestTypeRule() }
+        val rule = testTypeRulesMap.getOrPut(type) { TestTypeRule() }
         action.execute(rule)
     }
 
@@ -91,17 +92,24 @@ abstract class ImpactAnalysisExtension @Inject constructor(objects: ObjectFactor
     fun e2eTests(action: Action<TestTypeRule>) = testType(TestType.E2E, action)
     fun apiTests(action: Action<TestTypeRule>) = testType(TestType.API, action)
 
-    /**
-     * Get runAllTestsOnCriticalChanges value
-     */
-    internal val runAllTestsOnCriticalChanges: Boolean
-        get() = runAllTestsOnCriticalChangesProperty.get()
+    fun getConfig(): ImpactAnalysisConfig {
+        return object : ImpactAnalysisConfig {
+            override val runAllTestsOnCriticalChanges: Boolean
+                get() = this@ImpactAnalysisExtension.runAllTestsOnCriticalChanges.get()
 
-    /**
-     * Get runUnitTestsByDefault value
-     */
-    internal val runUnitTestsByDefault: Boolean
-        get() = runUnitTestsByDefaultProperty.get()
+            override val runUnitTestsByDefault: Boolean
+                get() = this@ImpactAnalysisExtension.runUnitTestsByDefault.get()
+
+            override val criticalPaths: List<String>
+                get() = this@ImpactAnalysisExtension.criticalPaths.get()
+
+            override val testTypeRules: Map<TestType, TestTypeRule>
+                get() = testTypeRulesMap
+
+            override val lintFileExtensions: List<String>
+                get() = this@ImpactAnalysisExtension.lintFileExtensions.get()
+        }
+    }
 }
 
 /**

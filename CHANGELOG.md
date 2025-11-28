@@ -1,5 +1,52 @@
 # Changelog
 
+## [1.0.12] - 2024
+
+### Fixed
+
+- 🐛 **Extension Property Names** - Fixed property naming to match Gradle conventions
+    - Renamed `criticalPathsProperty` → `criticalPaths`
+    - Renamed `lintFileExtensionsProperty` → `lintFileExtensions`
+    - Renamed `runAllTestsOnCriticalChangesProperty` → `runAllTestsOnCriticalChanges`
+    - Renamed `runUnitTestsByDefaultProperty` → `runUnitTestsByDefault`
+    - Users can now use `.set()` directly: `criticalPaths.set(listOf(...))`
+    - Fixed "Unresolved reference" error when configuring the plugin
+
+### Added
+
+- ✨ **Configuration Cache Support** - Plugin now fully supports Gradle configuration cache for ALL tasks
+    - ✅ `CalculateImpactTask` - All `Project` data is serialized during configuration phase
+    - ✅ `GetChangedFilesTask` - Fixed to not access project at execution time
+    - ✅ `RunImpactTestsTask` - Uses `ExecOperations` instead of `project.exec`
+    - ✅ `RunImpactKotlinCompileTask` - Uses `ExecOperations` instead of `project.exec`
+    - Created `SerializedDependencyGraph` for configuration-cache-compatible dependency analysis
+    - Created `SerializedDependencyAnalyzer` for file-to-module mapping
+    - Created `SerializedTestScopeCalculator` for test scope calculation
+    - Plugin properly serializes module dependencies, reverse dependencies, directories, and available test tasks
+    - No more "invocation of 'Task.project' at execution time is unsupported" error
+    - Significant build performance improvement when configuration cache is enabled (up to 70-80% faster)
+
+### Changed
+
+- 🔄 **Extension Architecture** - `ImpactAnalysisExtension` no longer directly implements `ImpactAnalysisConfig`
+    - Added `getConfig()` method to provide config data
+    - Better separation between Gradle properties and business logic
+    - Improved configuration cache compatibility
+
+- 🔄 **Task Execution** - Changed how tasks execute external Gradle commands
+    - `RunImpactTestsTask` and `RunImpactKotlinCompileTask` now use `@Inject ExecOperations`
+    - All tasks properly configure `rootProjectDir` during configuration phase
+    - Removed all `project` references from task execution phase
+
+### Technical Details
+
+- Removed `@UntrackedTask` annotation from `CalculateImpactTask`
+- Changed `rootProjectDir` from `@InputDirectory` to `@Internal` (directory itself isn't tracked for up-to-date checks)
+- Added new input properties: `moduleDependencies`, `moduleReverseDependencies`, `allModules`, `moduleDirectories`,
+  `availableTestTasks`
+- All dependency analysis is now done during configuration phase with serializable data structures
+- Fixed Gradle plugin validation warnings about property annotations
+
 ## [1.0.1] - 2024
 
 ### Fixed
