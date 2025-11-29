@@ -21,6 +21,7 @@ impactAnalysis {
 
     // Unit тесты (JVM)
     unitTests {
+        isEnable = true
         whenChanged(
             "src/main/java/**",
             "src/main/kotlin/**",
@@ -31,6 +32,7 @@ impactAnalysis {
 
     // Android Instrumentation тесты
     integrationTests {
+        isEnable = false
         whenChanged(
             "**/ui/**",
             "**/activity/**",
@@ -43,6 +45,7 @@ impactAnalysis {
 
     // UI тесты (Compose/Espresso)
     uiTests {
+        isEnable = true
         whenChanged(
             "**/compose/**",
             "**/res/layout/**",
@@ -54,6 +57,7 @@ impactAnalysis {
 
     // Screenshot тесты
     testType(com.impactanalysis.model.TestType.E2E) {
+        isEnable = false
         whenChanged("**/compose/**", "**/ui/**")
         runOnlyInChangedModules = true
     }

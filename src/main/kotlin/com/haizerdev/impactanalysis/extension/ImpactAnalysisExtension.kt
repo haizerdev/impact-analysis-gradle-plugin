@@ -137,12 +137,24 @@ abstract class ImpactAnalysisExtension @Inject constructor(objects: ObjectFactor
                 get() = this@ImpactAnalysisExtension.lintFileExtensions.get()
         }
     }
+
+    fun getSerializableTestTypeRulesMap(): Map<String, com.haizerdev.impactanalysis.tasks.SerializableTestTypeRule> {
+        return testTypeRulesMap.mapKeys { it.key.name }
+            .mapValues { (_, rule) ->
+                com.haizerdev.impactanalysis.tasks.SerializableTestTypeRule.fromRule(rule)
+            }
+    }
 }
 
 /**
  * Rule for determining when to run specific test types
  */
 class TestTypeRule {
+    /**
+     * Enables Disables this test type for analysis and execution
+     */
+    var isEnable: Boolean = false
+
     /**
      * File path patterns that trigger these tests when changed
      */

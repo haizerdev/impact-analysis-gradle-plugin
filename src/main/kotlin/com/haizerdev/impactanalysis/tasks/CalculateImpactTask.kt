@@ -201,7 +201,7 @@ abstract class CalculateImpactTask : DefaultTask() {
 
             // Determine affected modules
             val directModules = changedFiles.mapNotNull { it.module }.toSet()
-            val affectedModules = dependencyGraph.getAffectedModules(directModules)
+            val affectedModules = dependencyGraph.getAffectedModules(directModules).filterNot { it == ":" }.toSet()
 
             logger.lifecycle("Directly changed modules: $directModules")
             logger.lifecycle("All affected modules: $affectedModules")
@@ -272,13 +272,22 @@ abstract class CalculateImpactTask : DefaultTask() {
  */
 data class SerializableTestTypeRule(
     val pathPatterns: List<String> = emptyList(),
-    val runOnlyInChangedModules: Boolean = false
+    val runOnlyInChangedModules: Boolean = false,
+    val isEnable: Boolean = false,
 ) : Serializable {
     fun toTestTypeRule(): TestTypeRule {
         return TestTypeRule().apply {
             pathPatterns.addAll(this@SerializableTestTypeRule.pathPatterns)
             runOnlyInChangedModules = this@SerializableTestTypeRule.runOnlyInChangedModules
+            isEnable = this@SerializableTestTypeRule.isEnable
         }
+    }
+    companion object {
+        fun fromRule(rule: TestTypeRule) = SerializableTestTypeRule(
+            pathPatterns = rule.pathPatterns,
+            runOnlyInChangedModules = rule.runOnlyInChangedModules,
+            isEnable = rule.isEnable
+        )
     }
 }
 
@@ -435,7 +444,7 @@ class SerializedTestScopeCalculator(
 
         // Determine affected modules
         val directlyAffectedModules = changedFiles.mapNotNull { it.module }.toSet()
-        val allAffectedModules = dependencyGraph.getAffectedModules(directlyAffectedModules)
+        val allAffectedModules = dependencyGraph.getAffectedModules(directlyAffectedModules).filterNot { it == ":" }.toSet()
 
         // Check critical files
         val criticalPaths = config.criticalPaths
@@ -451,6 +460,7 @@ class SerializedTestScopeCalculator(
 
         // Determine test types for each affected module
         config.testTypeRules.forEach { (testType, rule) ->
+            if (!rule.isEnable) return@forEach // if prohibited, skip
             val modulesToTest = when {
                 // If changed files match the rule
                 changedFiles.any { file -> rule.shouldRunForFile(file.path) } -> {
@@ -483,7 +493,7 @@ class SerializedTestScopeCalculator(
     private fun getAllTestsForModules(modules: Set<String>): Map<TestType, List<String>> {
         val result = mutableMapOf<TestType, List<String>>()
 
-        TestType.values().filter { it != TestType.ALL }.forEach { testType ->
+        TestType.entries.filter { it != TestType.ALL }.forEach { testType ->
             result[testType] = generateTestTasks(modules, testType)
         }
 

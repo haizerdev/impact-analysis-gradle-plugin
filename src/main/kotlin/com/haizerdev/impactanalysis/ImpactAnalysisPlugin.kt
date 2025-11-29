@@ -73,13 +73,7 @@ class ImpactAnalysisPlugin : Plugin<Project> {
 
             // Convert test type rules to serializable format
             task.testTypeRulesData.convention(project.provider {
-                extension.testTypeRulesMap.mapKeys { it.key.name }
-                    .mapValues { (_, rule) ->
-                        com.haizerdev.impactanalysis.tasks.SerializableTestTypeRule(
-                            pathPatterns = rule.pathPatterns.toList(),
-                            runOnlyInChangedModules = rule.runOnlyInChangedModules
-                        )
-                    }
+                extension.getSerializableTestTypeRulesMap()
             })
         }
 
