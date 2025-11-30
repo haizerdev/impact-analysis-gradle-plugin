@@ -21,6 +21,13 @@ abstract class ImpactAnalysisExtension @Inject constructor(objects: ObjectFactor
     }
 
     /**
+     * Run mode for impact analysis (default: GRADLE_TASK)
+     */
+    val runMode: Property<ImpactRunMode> = objects.property(ImpactRunMode::class.java).apply {
+        convention(ImpactRunMode.GRADLE_TASK)
+    }
+
+    /**
      * Branch to compare (default: HEAD)
      */
     val compareBranch: Property<String> = objects.property(String::class.java).apply {
@@ -144,6 +151,12 @@ abstract class ImpactAnalysisExtension @Inject constructor(objects: ObjectFactor
                 com.haizerdev.impactanalysis.tasks.SerializableTestTypeRule.fromRule(rule)
             }
     }
+}
+
+enum class ImpactRunMode {
+    GRADLE_TASK,
+    PYTHON,
+    BASH
 }
 
 /**

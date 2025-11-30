@@ -22,7 +22,7 @@ class TestScopeCalculatorTest {
 
     private lateinit var rootProject: Project
     private lateinit var extension: ImpactAnalysisExtension
-    private lateinit var dependencyGraph: com.haizerdev.impactanalysis.dependency.ModuleDependencyGraph
+    private lateinit var dependencyGraph: ModuleDependencyGraph
     private lateinit var dependencyAnalyzer: DependencyAnalyzer
     private lateinit var calculator: TestScopeCalculator
 
@@ -65,7 +65,7 @@ class TestScopeCalculatorTest {
             rule.runOnlyInChangedModules = true
         }
 
-        dependencyGraph = com.haizerdev.impactanalysis.dependency.ModuleDependencyGraph(rootProject)
+        dependencyGraph = ModuleDependencyGraph(rootProject)
         dependencyAnalyzer = DependencyAnalyzer(rootProject)
 
         calculator = TestScopeCalculator(

@@ -1,6 +1,7 @@
 package com.haizerdev.impactanalysis
 
 import com.haizerdev.impactanalysis.extension.ImpactAnalysisExtension
+import com.haizerdev.impactanalysis.extension.ImpactRunMode
 import com.haizerdev.impactanalysis.tasks.CalculateImpactTask
 import com.haizerdev.impactanalysis.tasks.GetChangedFilesTask
 import com.haizerdev.impactanalysis.tasks.RunImpactKotlinCompileTask
@@ -45,6 +46,7 @@ class ImpactAnalysisPlugin : Plugin<Project> {
             task.runAllTestsOnCriticalChanges.convention(extension.runAllTestsOnCriticalChanges)
             task.runUnitTestsByDefault.convention(extension.runUnitTestsByDefault)
             task.criticalPaths.convention(extension.criticalPaths)
+            task.mode.convention(extension.runMode)
 
             // Android variant configuration
             task.androidUnitTestVariant.convention(extension.androidUnitTestVariant)
@@ -103,27 +105,29 @@ class ImpactAnalysisPlugin : Plugin<Project> {
             )
         }
 
-        // Task for running tests based on impact analysis
-        project.tasks.register("runImpactTests", RunImpactTestsTask::class.java) { task ->
-            task.description = "Run tests based on impact analysis results"
-            task.group = "impact analysis"
+        if (extension.runMode.get() == ImpactRunMode.GRADLE_TASK) {
+            // Task for running tests based on impact analysis
+            project.tasks.register("runImpactTests", RunImpactTestsTask::class.java) { task ->
+                task.description = "Run tests based on impact analysis results"
+                task.group = "impact analysis"
 
-            task.rootProjectDir.convention(project.layout.projectDirectory)
+                task.rootProjectDir.convention(project.layout.projectDirectory)
 
-            // Depends on calculateImpact
-            task.dependsOn("calculateImpact")
-        }
+                // Depends on calculateImpact
+                task.dependsOn("calculateImpact")
+            }
 
-        // Task for running Kotlin compilation based on impact analysis
-        project.tasks.register("runImpactKotlinCompile", RunImpactKotlinCompileTask::class.java) { task ->
-            task.description = "Run Kotlin compilation for affected modules"
-            task.group = "impact analysis"
+            // Task for running Kotlin compilation based on impact analysis
+            project.tasks.register("runImpactKotlinCompile", RunImpactKotlinCompileTask::class.java) { task ->
+                task.description = "Run Kotlin compilation for affected modules"
+                task.group = "impact analysis"
 
-            task.rootProjectDir.convention(project.layout.projectDirectory)
-            task.androidCompileVariant.convention(extension.androidCompileVariant)
+                task.rootProjectDir.convention(project.layout.projectDirectory)
+                task.androidCompileVariant.convention(extension.androidCompileVariant)
 
-            // Depends on calculateImpact
-            task.dependsOn("calculateImpact")
+                // Depends on calculateImpact
+                task.dependsOn("calculateImpact")
+            }
         }
     }
 

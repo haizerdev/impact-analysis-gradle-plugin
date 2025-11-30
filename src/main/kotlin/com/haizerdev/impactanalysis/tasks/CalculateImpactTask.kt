@@ -1,19 +1,15 @@
 package com.haizerdev.impactanalysis.tasks
 
 import com.google.gson.GsonBuilder
-import com.haizerdev.impactanalysis.dependency.DependencyAnalyzer
-import com.haizerdev.impactanalysis.dependency.ModuleDependencyGraph
-import com.haizerdev.impactanalysis.extension.ImpactAnalysisExtension
+import com.haizerdev.impactanalysis.extension.ImpactRunMode
 import com.haizerdev.impactanalysis.extension.TestTypeRule
 import com.haizerdev.impactanalysis.git.GitClient
 import com.haizerdev.impactanalysis.model.ChangedFile
 import com.haizerdev.impactanalysis.model.FileLanguage
 import com.haizerdev.impactanalysis.model.ImpactAnalysisResult
 import com.haizerdev.impactanalysis.model.TestType
-import com.haizerdev.impactanalysis.scope.TestScopeCalculator
 import com.haizerdev.impactanalysis.git.GitDiffEntry
 import org.gradle.api.DefaultTask
-import org.gradle.api.Project
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -21,7 +17,6 @@ import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.*
 import java.io.Serializable
-import javax.inject.Inject
 
 /**
  * Task for calculating impact analysis
@@ -105,6 +100,9 @@ abstract class CalculateImpactTask : DefaultTask() {
     @get:Optional
     abstract val androidInstrumentedTestVariant: Property<String>
 
+    @get:Input
+    abstract val mode: Property<ImpactRunMode>
+
     @get:OutputFile
     abstract val outputFile: RegularFileProperty
 
@@ -124,6 +122,31 @@ abstract class CalculateImpactTask : DefaultTask() {
     @TaskAction
     fun execute() {
         val rootDir = rootProjectDir.get().asFile
+
+        val scriptDir = outputFile.get().asFile.parentFile
+        val pythonScript = java.io.File(scriptDir, "impact_tests_launcher.py")
+        val bashScript = java.io.File(scriptDir, "run_impact_tests.sh")
+
+        val runMode = mode.get()
+        when (runMode) {
+            ImpactRunMode.PYTHON -> {
+                // Удаляем bash-скрипт если был
+                if (bashScript.exists()) bashScript.delete()
+                copyBuiltinPythonScript()
+            }
+
+            ImpactRunMode.BASH -> {
+                // Удаляем python скрипт если был
+                if (pythonScript.exists()) pythonScript.delete()
+                prepareBashLauncher()
+            }
+
+            else -> {
+                // Если выбран gradle — удаляем оба скрипта как неактуальные
+                if (pythonScript.exists()) pythonScript.delete()
+                if (bashScript.exists()) bashScript.delete()
+            }
+        }
 
         // Reconstruct extension data from properties
         val extensionData = ExtensionData(
@@ -243,6 +266,55 @@ abstract class CalculateImpactTask : DefaultTask() {
         } finally {
             gitClient.close()
         }
+    }
+
+    /**
+     * Копирует встроенный Python-скрипт для запуска тестов в build/impact-analysis/impact_tests_launcher.py
+     */
+    private fun copyBuiltinPythonScript() {
+        // build/impact-analysis/
+        val scriptDir = outputFile.get().asFile.parentFile
+        scriptDir.mkdirs()
+        val scriptFile = java.io.File(scriptDir, "impact_tests_launcher.py")
+        val stream = javaClass.getResourceAsStream("/impact_tests_launcher.py")
+        if (stream == null) {
+            logger.warn("Builtin Python script resource not found! You must add impact_tests_launcher.py to resources!")
+            return
+        }
+        scriptFile.outputStream().use { out ->
+            stream.copyTo(out)
+        }
+        logger.lifecycle("Copied builtin Python test launcher to: ${scriptFile.absolutePath}")
+    }
+
+    /**
+     * Generates a bash script to run impact tests (run_impact_tests.sh)
+     */
+    private fun prepareBashLauncher() {
+        val resultFile = outputFile.get().asFile
+        if (!resultFile.exists()) return
+        val resultJson = resultFile.readText()
+        val tasks = mutableListOf<String>()
+        try {
+            val obj = com.google.gson.JsonParser.parseString(resultJson).asJsonObject
+            val testsObj = obj.getAsJsonObject("testsToRun")
+            testsObj?.entrySet()?.forEach { entry ->
+                val arr = entry.value.asJsonArray
+                arr.forEach { e -> tasks.add(e.asString) }
+            }
+        } catch (t: Throwable) {
+            logger.warn("Failed to parse result.json for bash launcher: $t")
+            return
+        }
+        if (tasks.isEmpty()) {
+            logger.lifecycle("No tests to run, so no bash launcher script generated.")
+            return
+        }
+        val bashScript = outputFile.get().asFile.parentFile.resolve("run_impact_tests.sh")
+        val gradleCall = "./gradlew " + tasks.joinToString(" ") + " " + listOf("--continue", "--parallel").joinToString(" ")
+        bashScript.writeText("#!/bin/bash\n$gradleCall\n")
+        bashScript.setExecutable(true)
+        logger.lifecycle("Generated bash script to run impacted tests: ${bashScript.absolutePath}")
     }
 
     private fun saveResult(result: ImpactAnalysisResult) {
