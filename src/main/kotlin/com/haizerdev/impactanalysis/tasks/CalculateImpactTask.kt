@@ -495,6 +495,14 @@ class SerializedDependencyAnalyzer(
                 fileName.endsWith(".pro") || // ProGuard
                 normalizedPath.contains("gradle/")
     }
+
+    /**
+     * Абсолютный путь к директории модуля
+     */
+    fun getAbsoluteModuleDir(modulePath: String): java.io.File? {
+        val rel = moduleDirectories[modulePath]
+        return if (rel == null || rel.isBlank()) rootDir else java.io.File(rootDir, rel)
+    }
 }
 
 /**
@@ -575,17 +583,20 @@ class SerializedTestScopeCalculator(
     }
 
     /**
-     * Generate task names for running tests
+     * Generate task names for running tests, фильтруя задачи для модулей без src/test или src/androidTest
      */
     private fun generateTestTasks(modules: Set<String>, testType: TestType): List<String> {
         return modules.mapNotNull { modulePath ->
             val tasks = availableTestTasks[modulePath] ?: emptyList()
+            val moduleDir = dependencyAnalyzer.getAbsoluteModuleDir(modulePath)
+
+            val hasTests = moduleDir != null && hasTestsInModule(moduleDir, testType)
+            if (!hasTests) return@mapNotNull null
 
             // Generate task name based on test type and Android variant
             val taskName = when {
                 // Android unit tests with variant
                 testType == TestType.UNIT && androidUnitTestVariant.isNotEmpty() -> {
-                    // Try to find exact match for the variant
                     val variantTaskName = "test${androidUnitTestVariant.replaceFirstChar { it.uppercase() }}UnitTest"
                     if (tasks.contains(variantTaskName)) {
                         variantTaskName
@@ -598,15 +609,12 @@ class SerializedTestScopeCalculator(
                         } ?: testType.taskSuffix
                     }
                 }
-                // Android UI/instrumented tests with variant
                 (testType == TestType.UI || testType == TestType.E2E) && androidInstrumentedTestVariant.isNotEmpty() -> {
-                    // Try to find exact match for the variant
                     val variantTaskName =
                         "connected${androidInstrumentedTestVariant.replaceFirstChar { it.uppercase() }}AndroidTest"
                     if (tasks.contains(variantTaskName)) {
                         variantTaskName
                     } else {
-                        // Try to find any task that contains the variant name
                         tasks.find {
                             it.startsWith("connected") &&
                                     it.endsWith("AndroidTest") &&
@@ -614,7 +622,6 @@ class SerializedTestScopeCalculator(
                         } ?: testType.taskSuffix
                     }
                 }
-                // Default task name
                 else -> testType.taskSuffix
             }
 
@@ -628,5 +635,22 @@ class SerializedTestScopeCalculator(
                 null
             }
         }.sorted()
+    }
+
+    /**
+     * Поиск есть ли хотя бы один тестовый файл в стандартных source setах для указанного типа теста
+     */
+    private fun hasTestsInModule(moduleDir: java.io.File, testType: TestType): Boolean {
+        if (!moduleDir.exists() || !moduleDir.isDirectory) return false
+        val testDirs = mutableListOf("src/test")
+        if (testType == TestType.UI || testType == TestType.E2E) {
+            testDirs += listOf("src/androidTest", "src/androidTestDebug", "src/androidTestRelease")
+        }
+        return testDirs.any { relPath ->
+            val absDir = moduleDir.resolve(relPath)
+            absDir.exists() && absDir.walkTopDown().any {
+                it.isFile && (it.extension == "kt" || it.extension == "java")
+            }
+        }
     }
 }
