@@ -4,6 +4,7 @@ import io.github.haizerdev.impactanalysis.extension.ImpactAnalysisExtension
 import io.github.haizerdev.impactanalysis.extension.ImpactRunMode
 import io.github.haizerdev.impactanalysis.tasks.CalculateImpactTask
 import io.github.haizerdev.impactanalysis.tasks.GetChangedFilesTask
+import io.github.haizerdev.impactanalysis.tasks.PrintImpactReportTask
 import io.github.haizerdev.impactanalysis.tasks.RunImpactKotlinCompileTask
 import io.github.haizerdev.impactanalysis.tasks.RunImpactTestsTask
 import org.gradle.api.Plugin
@@ -61,10 +62,6 @@ class ImpactAnalysisPlugin : Plugin<Project> {
                 serializeModuleReverseDependencies(project.rootProject)
             })
 
-            task.allModules.convention(project.provider {
-                project.rootProject.allprojects.map { it.path }.toList()
-            })
-
             task.moduleDirectories.convention(project.provider {
                 serializeModuleDirectories(project.rootProject)
             })
@@ -103,6 +100,12 @@ class ImpactAnalysisPlugin : Plugin<Project> {
             task.outputFile.convention(
                 project.layout.buildDirectory.file("impact-analysis/lint-files.txt")
             )
+        }
+
+        // Task for printing impact report
+        project.tasks.register("printImpactReport", PrintImpactReportTask::class.java) { task ->
+            task.description = "Print impact analysis report"
+            task.group = "impact analysis"
         }
 
         if (extension.runMode.get() == ImpactRunMode.GRADLE_TASK) {

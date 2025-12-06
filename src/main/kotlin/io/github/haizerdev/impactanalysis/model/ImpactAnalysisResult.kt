@@ -10,7 +10,8 @@ data class ImpactAnalysisResult(
     val affectedModules: Set<String>,
     val testsToRun: Map<TestType, List<String>>,
     val filesToLint: List<String>,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val report: ImpactReport? = null
 ) : Serializable
 
 /**
@@ -60,3 +61,18 @@ enum class FileLanguage(val extensions: List<String>) {
         }
     }
 }
+
+/**
+ * Impact analysis statistics and report
+ */
+data class ImpactReport(
+    val totalTestsToRun: Int,
+    val totalTestsSkipped: Int,
+    val modulesToRun: Set<String>,
+    val skippedModules: Set<String>,
+    val estimatedTimeSavedMinutes: Double,
+    val testsByType: Map<TestType, Int>,
+    val totalTestMethodsToRun: Int = 0,
+    val totalTestMethodsSkipped: Int = 0,
+    val testMethodsByModule: Map<String, Int> = emptyMap()
+) : Serializable
