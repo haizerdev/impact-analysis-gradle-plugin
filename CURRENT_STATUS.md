@@ -7,13 +7,13 @@
 **Before:**
 
 ```kotlin
-id = "com.haizerdev.impact-analysis"  // ❌ Gradle transforms to com.haizerdev.impact_analysis
+id = "io.github.haizerdev.impact-analysis"  // ❌ Gradle transforms to io.github.haizerdev.impact_analysis
 ```
 
 **Now:**
 
 ```kotlin
-id = "com.haizerdev.impactanalysis"  // ✅ Matches package name
+id = "io.github.haizerdev.impactanalysis"  // ✅ Matches package name
 ```
 
 **Result:** The plugin now builds correctly and can be published.
@@ -98,14 +98,14 @@ git push origin v1.0.4
 ### Build Gradle
 
 ```kotlin
-group = "com.haizerdev.impactanalysis"
+group = "io.github.haizerdev.impactanalysis"
 version = "1.0.3"
 
 gradlePlugin {
     plugins {
         create("impactAnalysisPlugin") {
-           id = "com.haizerdev.impactanalysis"  // ✅ Correct ID
-            implementationClass = "com.haizerdev.impactanalysis.ImpactAnalysisPlugin"
+           id = "io.github.haizerdev.impactanalysis"  // ✅ Correct ID
+            implementationClass = "io.github.haizerdev.impactanalysis.ImpactAnalysisPlugin"
             displayName = "Impact Analysis Plugin"
             description = "Gradle plugin for automatic Git changes analysis..."
         }
@@ -131,7 +131,7 @@ gradlePlugin {
 - **Repository:** https://github.com/haizerdev/Impact-analysis-gradle-plugin
 - **GitHub Actions:** https://github.com/haizerdev/Impact-analysis-gradle-plugin/actions
 - **Publication Setup Guide:** [PUBLISH_SETUP.md](PUBLISH_SETUP.md)
-- **Gradle Plugin Portal:** https://plugins.gradle.org/plugin/com.haizerdev.impactanalysis (will be available after
+- **Gradle Plugin Portal:** https://plugins.gradle.org/plugin/io.github.haizerdev.impactanalysis (will be available after
   publication)
 
 ---

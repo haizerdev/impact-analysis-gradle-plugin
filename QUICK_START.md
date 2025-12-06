@@ -8,7 +8,7 @@ Add the plugin to your root `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("com.haizerdev.impactanalysis") version "1.0.4"
+    id("io.github.haizerdev.impactanalysis") version "1.0.4"
 }
 ```
 
@@ -266,7 +266,7 @@ tasks.register("showImpact") {
     doLast {
         val result = com.google.gson.Gson().fromJson(
             file("build/impact-analysis/result.json").readText(),
-            com.haizerdev.impactanalysis.model.ImpactAnalysisResult::class.java
+            io.github.haizerdev.impactanalysis.model.ImpactAnalysisResult::class.java
         )
         
         println("Affected modules: ${result.affectedModules}")
@@ -397,7 +397,7 @@ git checkout feature/my-feature
 
 ```kotlin
 plugins {
-    id("com.haizerdev.impactanalysis") version "1.0.4"
+    id("io.github.haizerdev.impactanalysis") version "1.0.4"
 }
 
 impactAnalysis {
@@ -409,7 +409,7 @@ impactAnalysis {
 
 ```kotlin
 plugins {
-    id("com.haizerdev.impactanalysis") version "1.0.4"
+    id("io.github.haizerdev.impactanalysis") version "1.0.4"
 }
 
 impactAnalysis {
