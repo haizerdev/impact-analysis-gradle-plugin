@@ -1,5 +1,25 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- **Critical Changes Detection**: Fixed `runAllTestsOnCriticalChanges` to properly distinguish between root-level and
+  module-level configuration files
+  - Root-level config files (e.g., `build.gradle.kts`, `settings.gradle.kts`, `gradle.properties` in project root,
+    `gradle/` directory) now trigger all tests in all modules
+  - Module-level config files (e.g., `app/build.gradle.kts`, `feature/module/build.gradle.kts`) now only trigger tests
+    in affected modules and their dependents
+  - Added `isRootLevelConfigFile()` method to accurately detect project-wide configuration changes
+  - Improved logging to show which critical files were detected and their impact scope
+
+### Added
+
+- **Comprehensive Test Coverage**: Added 37 new tests for critical changes detection logic
+  - `SerializedDependencyAnalyzerTest`: 28 tests covering file classification and module detection
+  - `SerializedTestScopeCalculatorTest`: 9 tests covering test scope calculation for different scenarios
+  - See `TESTS_DOCUMENTATION.md` for detailed test coverage information
+
 ## [1.0.12] - 2024
 
 ### Fixed

@@ -57,6 +57,8 @@ abstract class ImpactAnalysisExtension @Inject constructor(objects: ObjectFactor
 
     /**
      * Critical paths that trigger all tests when changed
+     * These are root-level paths that can affect the entire project
+     * Module-level config files (e.g., app/build.gradle.kts) will only trigger tests in affected modules
      */
     val criticalPaths: ListProperty<String> = objects.listProperty(String::class.java).apply {
         convention(
@@ -65,7 +67,8 @@ abstract class ImpactAnalysisExtension @Inject constructor(objects: ObjectFactor
                 "build.gradle.kts",
                 "settings.gradle",
                 "settings.gradle.kts",
-                "gradle.properties"
+                "gradle.properties",
+                "gradle/"
             )
         )
     }

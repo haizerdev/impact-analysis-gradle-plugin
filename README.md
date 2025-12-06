@@ -414,9 +414,11 @@ test:
         └───────────────┘
 ```
 
-## Testing
+## Development
 
-The plugin is covered with unit and integration tests:
+### Running Tests
+
+The plugin has comprehensive test coverage. To run tests:
 
 ```bash
 # Run tests
