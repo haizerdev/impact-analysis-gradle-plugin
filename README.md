@@ -27,7 +27,7 @@ Gradle plugin for automatic Git changes analysis and test scope determination in
 
 ```kotlin
 plugins {
-    id("io.github.haizerdev.impactanalysis") version "1.0.12"
+    id("io.github.haizerdev.impactanalysis") version "1.0.20"
 }
 ```
 
@@ -66,7 +66,7 @@ This plugin is automatically published to **Gradle Plugin Portal** using GitHub 
 
 ### For Plugin Developers
 
-When you create a new release tag (e.g., `v1.0.12`), GitHub Actions automatically:
+When you create a new release tag (e.g., `v1.0.20`), GitHub Actions automatically:
 
 1. Runs all tests
 2. Builds the plugin
@@ -77,14 +77,14 @@ When you create a new release tag (e.g., `v1.0.12`), GitHub Actions automaticall
 
 ```bash
 # Update version in build.gradle.kts
-# version = "1.0.12"
+# version = "1.0.20"
 
 git add build.gradle.kts
-git commit -m "chore: bump version to 1.0.12"
+git commit -m "chore: bump version to 1.0.20"
 git push origin main
 
-git tag -a v1.0.12 -m "Release v1.0.12"
-git push origin v1.0.12
+git tag -a v1.0.20 -m "Release v1.0.20"
+git push origin v1.0.20
 ```
 
 ## Usage

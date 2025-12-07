@@ -20,7 +20,7 @@
   - `SerializedTestScopeCalculatorTest`: 9 tests covering test scope calculation for different scenarios
   - See `TESTS_DOCUMENTATION.md` for detailed test coverage information
 
-## [1.0.12] - 2024
+## [1.0.20] - 2024
 
 ### Fixed
 
