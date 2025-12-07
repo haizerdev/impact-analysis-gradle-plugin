@@ -94,6 +94,22 @@ class ImpactAnalysisResultTest {
     }
 
     @Test
+    fun `test formatEstimatedTime function`() {
+        // Test seconds (< 60 seconds)
+        assertEquals("0 sec", formatEstimatedTime(0.0))
+        assertEquals("10 sec", formatEstimatedTime(10.0 / 60.0))
+        assertEquals("45 sec", formatEstimatedTime(45.0 / 60.0))
+        assertEquals("59 sec", formatEstimatedTime(59.0 / 60.0))
+
+        // Test minutes (>= 60 seconds)
+        assertEquals("1 min", formatEstimatedTime(1.0))
+        assertEquals("2 min 30 sec", formatEstimatedTime(2.5))
+        assertEquals("5 min", formatEstimatedTime(5.0))
+        assertEquals("10 min 15 sec", formatEstimatedTime(10.25))
+        assertEquals("60 min", formatEstimatedTime(60.0))
+    }
+
+    @Test
     fun `test ImpactAnalysisResult without report`() {
         val result = ImpactAnalysisResult(
             changedFiles = emptyList(),

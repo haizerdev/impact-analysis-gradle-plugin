@@ -1,6 +1,7 @@
 package io.github.haizerdev.impactanalysis.report
 
 import io.github.haizerdev.impactanalysis.model.ImpactReport
+import io.github.haizerdev.impactanalysis.model.formatEstimatedTime
 
 /**
  * Formatter for Impact Analysis Report
@@ -34,7 +35,7 @@ object ReportFormatter {
             appendLine("║     • Modules skipped:   ${report.skippedModules.size}")
             appendLine("║")
             appendLine("║  ⏱️  Time Estimation:")
-            appendLine("║     • Estimated time saved: %.1f minutes".format(report.estimatedTimeSavedMinutes))
+            appendLine("║     • Estimated time saved: ~${formatEstimatedTime(report.estimatedTimeSavedMinutes)}")
 
             if (includeDetails) {
                 appendLine("║")
@@ -102,7 +103,7 @@ object ReportFormatter {
     fun formatForBashScript(report: ImpactReport): String {
         return buildString {
             appendLine("echo \"\"")
-            formatAsBox(report, includeDetails = false).lines().forEach { line ->
+            formatAsBox(report, includeDetails = true).lines().forEach { line ->
                 if (line.isNotEmpty()) {
                     appendLine("echo \"$line\"")
                 }
@@ -123,7 +124,7 @@ object ReportFormatter {
             "Total tests skipped: ${report.totalTestsSkipped}",
             "Modules to run (${report.modulesToRun.size}): ${report.modulesToRun.joinToString(", ")}",
             "Skipped modules (${report.skippedModules.size}): ${report.skippedModules.joinToString(", ")}",
-            "Estimated time saved: %.1f minutes".format(report.estimatedTimeSavedMinutes),
+            "Estimated time saved: ${formatEstimatedTime(report.estimatedTimeSavedMinutes)}",
             "Total test methods to run: ${report.totalTestMethodsToRun}",
             "Total test methods skipped: ${report.totalTestMethodsSkipped}",
             "==========================================="

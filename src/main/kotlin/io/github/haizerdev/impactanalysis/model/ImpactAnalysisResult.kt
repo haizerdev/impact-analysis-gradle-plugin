@@ -76,3 +76,25 @@ data class ImpactReport(
     val totalTestMethodsSkipped: Int = 0,
     val testMethodsByModule: Map<String, Int> = emptyMap()
 ) : Serializable
+
+/**
+ * Format time in a human-readable way
+ * - Less than 60 seconds: "45 sec"
+ * - 60+ seconds: "2 min 30 sec"
+ */
+fun formatEstimatedTime(minutes: Double): String {
+    val totalSeconds = (minutes * 60).toInt()
+
+    return when {
+        totalSeconds < 60 -> "$totalSeconds sec"
+        else -> {
+            val mins = totalSeconds / 60
+            val secs = totalSeconds % 60
+            if (secs > 0) {
+                "$mins min $secs sec"
+            } else {
+                "$mins min"
+            }
+        }
+    }
+}

@@ -386,11 +386,19 @@ abstract class CalculateImpactTask : DefaultTask() {
             .keys
             .filterRootModule()
 
-        // Calculate total available tests across all real modules
-        val totalAvailableTests = realModulesWithTests.sumOf { module ->
-            availableTestTasks[module]?.size ?: 0
+        // Calculate total tests that WOULD be run if all modules were tested
+        // (based on the same variant we're using, not all available variants)
+        val totalPotentialTests = realModulesWithTests.count { modulePath ->
+            val tasks = availableTestTasks[modulePath] ?: emptyList()
+            val moduleDir = SerializedDependencyAnalyzer(
+                rootDir = rootProjectDir.get().asFile,
+                moduleDirectories = moduleDirectories.get()
+            ).getAbsoluteModuleDir(modulePath)
+
+            moduleDir != null && tasks.isNotEmpty()
         }
-        val totalTestsSkipped = totalAvailableTests - totalTestsToRun
+
+        val totalTestsSkipped = totalPotentialTests - totalTestsToRun
 
         // Extract module names from task paths (e.g., ":app:testDebugUnitTest" -> ":app")
         val modulesToRun = testsToRun.values.flatten().mapNotNull { task ->
@@ -411,11 +419,11 @@ abstract class CalculateImpactTask : DefaultTask() {
                 rootDir = rootProjectDir.get().asFile,
                 moduleDirectories = moduleDirectories.get()
             ).getAbsoluteModuleDir(modulePath)
-            
+
             if (moduleDir != null) {
                 val testMethodCount = countTestMethodsInModule(moduleDir)
                 testMethodsByModule[modulePath] = testMethodCount
-                
+
                 if (modulePath in modulesToRun) {
                     totalTestMethodsToRun += testMethodCount
                 } else {
@@ -424,8 +432,24 @@ abstract class CalculateImpactTask : DefaultTask() {
             }
         }
 
-        // Estimate time saved: average 0.5 minutes per test task
-        val estimatedTimeSavedMinutes = totalTestsSkipped * 0.5
+        // Estimate time saved based on test methods (more accurate than test tasks)
+        // Algorithm:
+        // - Average test execution: ~0.5 seconds per test method
+        // - Gradle task overhead: ~5 seconds per test task (compilation, initialization)
+        // Formula: (test_methods * 0.5s) + (test_tasks_with_tests * 5s)
+
+        // Calculate time in minutes:
+        // - Test methods: 0.5 sec = 0.5/60 = 0.00833 minutes per test
+        // - Task overhead: 5 sec = 5/60 = 0.0833 minutes per task (only for tasks that have tests)
+
+        // Only count tasks that actually have test methods
+        val skippedTasksWithTests = skippedModules.count { modulePath ->
+            (testMethodsByModule[modulePath] ?: 0) > 0
+        }
+
+        val testMethodTime = totalTestMethodsSkipped * 0.00833 // 0.5 seconds per test method
+        val taskOverheadTime = skippedTasksWithTests * 0.0833 // 5 seconds Gradle overhead per task with tests
+        val estimatedTimeSavedMinutes = testMethodTime + taskOverheadTime
 
         val testsByType = testsToRun.mapValues { it.value.size }
 
